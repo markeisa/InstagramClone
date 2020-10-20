@@ -1,10 +1,10 @@
 package com.example.instagramclone;
 
 import android.content.Intent;
+import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,54 +15,72 @@ import com.parse.ParseException;
 import com.parse.ParseUser;
 
 public class LoginActivity extends AppCompatActivity {
-    private static final String TAG = "LoginActivity";
+
     private EditText etUsername;
     private EditText etPassword;
     private Button btnLogin;
+    private Button btnSignup;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        if(ParseUser.getCurrentUser() != null) {
-            goMainActivity();
-        }
+        ConstraintLayout constraintLayout = findViewById(R.id.sign_in_layout);
+        AnimationDrawable animationDrawable = (AnimationDrawable) constraintLayout.getBackground();
+        animationDrawable.setEnterFadeDuration(2000);
+        animationDrawable.setExitFadeDuration(4000);
+        animationDrawable.start();
 
-        etUsername = findViewById(R.id.etUsername);
-        etPassword = findViewById(R.id.etPassword);
-        btnLogin = findViewById(R.id.btnLogin);
-        btnLogin.setOnClickListener(new View.OnClickListener() {
+        ParseUser currentUser = ParseUser.getCurrentUser();
+        if (currentUser != null) {
+            final Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+            startActivity(intent);
+            finish();
+        } else {
 
-            public void onClick(View v){
-                Log.i(TAG, "OnClick login button");
-                String username = etUsername.getText().toString();
-                String password = etPassword.getText().toString();
-                loginUser(username, password);
-            }
-        });
-    }
+            etUsername = findViewById(R.id.etUsername);
+            etPassword = findViewById(R.id.etPassword);
+            btnLogin = findViewById(R.id.btnLogin);
+            btnSignup = findViewById(R.id.btnSignUp);
 
-        private void  loginUser(String username, String password){
-            Log.i(TAG, "Attempting to login user " + username);
-            ParseUser.logInInBackground(username, password, new LogInCallback() {
+            btnSignup.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void done(ParseUser user, ParseException e) {
-                   if(e!= null) {
-                       Log.e(TAG, "Issue with login", e);
-                       return;
-                   }
-                       //TODO: navigate to the main activity if the user has signed in properly.
-                       goMainActivity();
-                    Toast.makeText(LoginActivity.this, "Success!", Toast.LENGTH_SHORT).show();
-                   }
+                public void onClick(View v) {
+                    final Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
+            });
 
+
+            btnLogin.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    final String username = etUsername.getText().toString();
+                    final String password = etPassword.getText().toString();
+                    login(username, password);
+                }
             });
         }
+    }
 
-    private void goMainActivity() {
-        Intent i= new Intent(this,MainActivity.class);
-        startActivity(i);
-        finish();
+
+    private void login(String username, String password) {
+        // DONT DO JUST LOGIN -- want to run in background so doesnt freeze up UI
+        ParseUser.logInInBackground(username, password, new LogInCallback() {
+            @Override
+            public void done(ParseUser user, ParseException e) {
+                if (e == null) {
+                    Toast.makeText(getApplicationContext(), "Log in successful", Toast.LENGTH_SHORT).show();
+
+                    final Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Log in failed", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 }
